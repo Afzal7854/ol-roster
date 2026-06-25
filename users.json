@@ -1,0 +1,9 @@
+{
+  "admin": {
+    "password": "c1a45d3835442cc2dc5b89cc413ee14473295f51378ac2f4a80207ce1b2cc23a",
+    "role": "admin",
+    "active": true,
+    "attempts": 0,
+    "locked": false
+  }
+}
