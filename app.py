@@ -749,10 +749,9 @@ def process_roster(roster_bytes, start_date, end_date):
     wb_out.save(buf)
     buf.seek(0)
     return buf,len(employees),missing
-# Auto init DB on startup
-with app.app_context():
-    if DATABASE_URL:
-        init_db()
+if DATABASE_URL:
+    init_db()
+    
 if __name__=='__main__':
     import webbrowser,threading
     def open_browser():
