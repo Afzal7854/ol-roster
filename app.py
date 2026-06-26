@@ -749,6 +749,32 @@ def process_roster(roster_bytes, start_date, end_date):
     wb_out.save(buf)
     buf.seek(0)
     return buf,len(employees),missing
+def init_db():
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                username VARCHAR(100) PRIMARY KEY,
+                password VARCHAR(200) NOT NULL,
+                role VARCHAR(20) DEFAULT 'user',
+                active BOOLEAN DEFAULT TRUE,
+                attempts INTEGER DEFAULT 0,
+                locked BOOLEAN DEFAULT FALSE
+            )
+        ''')
+        cur.execute("SELECT username FROM users WHERE username = 'admin'")
+        if not cur.fetchone():
+            import hashlib
+            pw = hashlib.sha256('OL@Admin2026'.encode()).hexdigest()
+            cur.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
+                ('admin', pw, 'admin'))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"DB init error: {e}")
+
 if DATABASE_URL:
     init_db()
     
