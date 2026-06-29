@@ -603,7 +603,30 @@ def process_roster(roster_bytes, start_date, end_date):
             if not olt or not str(olt).startswith('OLT'): continue
             olt_str=str(olt).strip()
             if olt_str not in olt_map: olt_map[olt_str]={}
-            col_d=row[cfg['colD']] if 'colD' in cfg and cfg['colD']<len(row) else None
+            # SEC2SM: find correct station col for this week's dates
+            col_d = None
+            if 'colD' in cfg:
+                # Find station col = the 'Station' header col just before the date cols for this week
+                for dc_str, dc_idx in date_cols.items():
+                    # station col is the col with 'Station' header closest before dc_idx
+                    best_stn_col = cfg['colD']  # default col 3
+                    for hi, hv in enumerate(rows[1]):
+                        if hv == 'Station' and hi < dc_idx:
+                            best_stn_col = hi
+                    col_d = row[best_stn_col] if best_stn_col < len(row) else None
+                    break  # use first date's station col as representative
+            # Build station col map for SEC2SM: each date -> its station col
+            stn_col_map = {}
+            if cfg['type'] == 'SEC2SM':
+                stn_cols = [i for i,v in enumerate(rows[1]) if v == 'Station']
+                date_col_list = sorted(date_cols.items(), key=lambda x: x[1])
+                for d_str, dc_idx in date_col_list:
+                    best = cfg['colD']
+                    for sc in stn_cols:
+                        if sc < dc_idx:
+                            best = sc
+                    stn_col_map[d_str] = best
+
             for d_str,ci in date_cols.items():
                 if ci>=len(row): continue
                 duty=row[ci]
@@ -613,7 +636,9 @@ def process_roster(roster_bytes, start_date, end_date):
                 if d_str in olt_map[olt_str] and olt_map[olt_str][d_str].get('ts'): continue
                 if cfg['type']=='SM': ts,gf=parse_sm(duty_s,stn_num(last_stn))
                 elif cfg['type'] in ('SEC','SA'): ts,gf=parse_sec(duty_s,stn_num(last_stn))
-                elif cfg['type']=='SEC2SM': ts,gf=parse_sec2sm(duty_s,col_d)
+                elif cfg['type']=='SEC2SM':
+                    week_col_d = row[stn_col_map.get(d_str, cfg['colD'])] if stn_col_map else col_d
+                    ts,gf=parse_sec2sm(duty_s,week_col_d)
                 else: ts,gf=parse_mgt(duty_s,last_stn)
                 olt_map[olt_str][d_str]={'ts':ts,'gf':gf}
     missing=[d.strftime('%Y-%m-%d') for d in target_dates if d.strftime('%Y-%m-%d') not in found_dates]
