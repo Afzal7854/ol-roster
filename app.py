@@ -689,7 +689,7 @@ def process_roster(roster_bytes, start_date, end_date):
             ts=entry.get('ts') or ''
             gf=entry.get('gf') or ''
             working=bool(ts)
-            for val in [ts,gf,'FALSE' if working else '','FALSE' if working else '']:
+            for val in [ts,gf,'','']:
                 c=ws_out.cell(ri,col,val)
                 c.font=DAT_FONT;c.alignment=CTR;c.border=BRD
                 col+=1
